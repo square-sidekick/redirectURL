@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redirecting...</title>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline';">
+    <script>
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+        window.onload = function() {
+            const status = getQueryParam('status');
+            const sessionIdFromUrl = getQueryParam('session_id'); // Get session_id from query param
+
+            // Construct the app URL: scheme://host/path?query
+            // Using the host "stripe-checkout" and path "/payment" as discussed
+            let appUrl = 'squaresidekick://stripe-checkout/payment?status=' + encodeURIComponent(status || 'unknown');
+            
+            if (sessionIdFromUrl) { // Check if sessionIdFromUrl is not null or empty
+                appUrl += '&session_id=' + encodeURIComponent(sessionIdFromUrl);
+            }
+
+            console.log('Intermediate page loaded. Status: ' + status + ', Session ID: ' + sessionIdFromUrl);
+            console.log('Attempting to redirect to app URL:', appUrl);
+            
+            document.getElementById('message').innerHTML = 'Please wait, attempting to return you to the SquareSidekick app...<br/>' +
+                'Status: ' + (status || 'unknown') +
+                '<br>If you are not redirected automatically, please open the app manually.';
+            
+            // Attempt to redirect to the app
+            window.location.href = appUrl;
+
+            // Fallback message in case redirect fails or is blocked
+            setTimeout(function() {
+                // Check if we are still on this page (meaning redirect failed)
+                // A more robust check might involve trying to see if the app opened, but that's hard from web.
+                // For now, just update the message.
+                const currentMessage = document.getElementById('message').innerHTML;
+                if (currentMessage.startsWith('Please wait')) { // If message hasn't changed to error
+                     document.getElementById('message').innerHTML =
+                        'Automatic redirect to the app may have been blocked or the app might not be installed correctly to handle the link. Please return to the SquareSidekick app manually.' +
+                        '<br/>Status: ' + (status || 'unknown');
+                }
+            }, 2500); // Give it 2.5 seconds to try the redirect
+        };
+    </script>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 90vh; text-align: center; margin: 20px; }
+    </style>
+</head>
+<body>
+    <p id="message">Initializing redirect...</p>
+</body>
+</html>
